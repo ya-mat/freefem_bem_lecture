@@ -83,6 +83,8 @@ border circleout(t=0, 2*pi){x=1.1*cos(t); y=1.1*sin(t); z=0;}
 
 mesh ThOut = buildmesh(b1(np)+b2(np)+b3(np)+b4(np)+circleout(-np*pi/R));
 
+plot(ThOut, wait=true);
+
 // Incident wave in volume
 fespace UhOut(ThOut,P1);
 UhOut<complex> vinc;
