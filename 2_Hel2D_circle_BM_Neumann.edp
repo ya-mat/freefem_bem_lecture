@@ -6,7 +6,7 @@ load "plotPDF"
 
 include "getARGV.idp"
 
-complex k = getARGV("-k",10.); // wavenumber
+complex k = getARGV("-k",4.); // wavenumber
 complex alpha = 1i/k;
 
 cout << "k" << k << endl;
@@ -19,7 +19,7 @@ func dxfinc = 1i*k*cos(angle)*finc;
 func dyfinc = 1i*k*sin(angle)*finc;
 
 //  Mesh
-int n = 200;
+int n = 100;
 border circle(t=0, 2*pi){x=cos(t); y=sin(t); z=0;}
 meshL Th = buildmeshL(circle(n));
 Th = OrientNormal(Th, unbounded=1); // inward normal
