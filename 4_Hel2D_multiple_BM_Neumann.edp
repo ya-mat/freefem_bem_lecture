@@ -30,19 +30,33 @@ int n = no*numCells;
 
 // Mesh four star
 func real starX1(real t){
-  real a = 0.4; // a < 1.0, near a is sharp
-  real b = 6.0; // number of hands
+  //real a = 0.4; // a < 1.0, near a is sharp
+  //real b = 6.0; // number of hands
+  real a = 0.15; // a < 1.0, near a is sharp
+  real b = 8.0; // number of hands
   return (1.0 + a*cos(b*t))*cos(t)/(1.0 + a);
 }
 func real starX2(real t){
-  real a = 0.4; // a < 1.0, near a is sharp
-  real b = 6.0; // number of hands
+  //real a = 0.4; // a < 1.0, near a is sharp
+  //real b = 6.0; // number of hands
+  real a = 0.15; // a < 1.0, near a is sharp
+  real b = 8.0; // number of hands
   return (1.0 + a*cos(b*t))*sin(t)/(1.0 + a);
 }
-border star1(t=0, 2*pi){x=starX1(t)      ; y=starX2(t)      ; z=0;}
-border star2(t=0, 2*pi){x=starX1(t) + 4.0; y=starX2(t)      ; z=0;}
-border star3(t=0, 2*pi){x=starX1(t)      ; y=starX2(t) - 4.0; z=0;}
-border star4(t=0, 2*pi){x=starX1(t) + 4.0; y=starX2(t) - 4.0; z=0;}
+func real rotThX1(real x1, real x2, real th){
+  return cos(th)*x1 - sin(th)*x2;
+}
+func real rotThX2(real x1, real x2, real th){
+  return sin(th)*x1 + cos(th)*x2;
+}
+//border star1(t=0, 2*pi){x=starX1(t)      ; y=starX2(t)      ; z=0;}
+//border star2(t=0, 2*pi){x=starX1(t) + 4.0; y=starX2(t)      ; z=0;}
+//border star3(t=0, 2*pi){x=starX1(t)      ; y=starX2(t) - 4.0; z=0;}
+//border star4(t=0, 2*pi){x=starX1(t) + 4.0; y=starX2(t) - 4.0; z=0;}
+border star1(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 0.0)      ; y=rotThX2(starX1(t), starX2(t), 0.0)      ; z=0;}
+border star2(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 1.0) + 4.0; y=rotThX2(starX1(t), starX2(t), 1.0)      ; z=0;}
+border star3(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 2.0)      ; y=rotThX2(starX1(t), starX2(t), 2.0) - 4.0; z=0;}
+border star4(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 3.0) + 4.0; y=rotThX2(starX1(t), starX2(t), 3.0) - 4.0; z=0;}
 meshL Th = buildmeshL(star1(no) + star2(no) + star3(no) + star4(no));
 Th = OrientNormal(Th, unbounded=1); // inward normal
 
