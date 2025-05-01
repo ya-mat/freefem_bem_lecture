@@ -6,7 +6,7 @@ load "plotPDF"
 
 include "getARGV.idp"
 
-complex k = getARGV("-k",4.); // wavenumber
+complex k = getARGV("-k",3.); // wavenumber
 complex alpha = 1i/k;
 
 cout << "k" << k << endl;
@@ -19,10 +19,12 @@ func dxfinc = 1i*k*cos(angle)*finc;
 func dyfinc = 1i*k*sin(angle)*finc;
 
 // Mesh four circle
-int numCells = 4;
+//int numCells = 1;
+//int numCells = 4;
+int numCells = 16;
 int no = 200;
 int n = no*numCells;
-//border circle1(t=0, 2*pi){x=cos(t)      ; y=sin(t)      ; z=0;}
+//border circle1(t=0, 2*pi){x=cos(t)	; y=sin(t)	; z=0;}
 //border circle2(t=0, 2*pi){x=cos(t) + 4.0; y=sin(t)	; z=0;}
 //border circle3(t=0, 2*pi){x=cos(t)	; y=sin(t) - 4.0; z=0;}
 //border circle4(t=0, 2*pi){x=cos(t) + 4.0; y=sin(t) - 4.0; z=0;}
@@ -49,15 +51,45 @@ func real rotThX1(real x1, real x2, real th){
 func real rotThX2(real x1, real x2, real th){
   return sin(th)*x1 + cos(th)*x2;
 }
-//border star1(t=0, 2*pi){x=starX1(t)      ; y=starX2(t)      ; z=0;}
-//border star2(t=0, 2*pi){x=starX1(t) + 4.0; y=starX2(t)      ; z=0;}
-//border star3(t=0, 2*pi){x=starX1(t)      ; y=starX2(t) - 4.0; z=0;}
+//border star1(t=0, 2*pi){x=starX1(t)	 ; y=starX2(t)	    ; z=0;}
+//border star2(t=0, 2*pi){x=starX1(t) + 4.0; y=starX2(t)	    ; z=0;}
+//border star3(t=0, 2*pi){x=starX1(t)	 ; y=starX2(t) - 4.0; z=0;}
 //border star4(t=0, 2*pi){x=starX1(t) + 4.0; y=starX2(t) - 4.0; z=0;}
-border star1(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 0.0)      ; y=rotThX2(starX1(t), starX2(t), 0.0)      ; z=0;}
-border star2(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 1.0) + 4.0; y=rotThX2(starX1(t), starX2(t), 1.0)      ; z=0;}
-border star3(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 2.0)      ; y=rotThX2(starX1(t), starX2(t), 2.0) - 4.0; z=0;}
-border star4(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 3.0) + 4.0; y=rotThX2(starX1(t), starX2(t), 3.0) - 4.0; z=0;}
-meshL Th = buildmeshL(star1(no) + star2(no) + star3(no) + star4(no));
+//border star5(t=0, 2*pi){x=starX1(t) + 8.0; y=starX2(t)      ; z=0;}
+//border star6(t=0, 2*pi){x=starX1(t) + 12.0; y=starX2(t)      ; z=0;}
+//border star7(t=0, 2*pi){x=starX1(t) + 8.0; y=starX2(t) - 4.0; z=0;}
+//border star8(t=0, 2*pi){x=starX1(t) + 12.0; y=starX2(t) - 4.0; z=0;}
+//border star9(t=0, 2*pi){x=starX1(t)       ; y=starX2(t) - 8.0; z=0;}
+//border star10(t=0, 2*pi){x=starX1(t) + 4.0; y=starX2(t) - 8.0; z=0;}
+//border star11(t=0, 2*pi){x=starX1(t)      ; y=starX2(t) - 12.0; z=0;}
+//border star12(t=0, 2*pi){x=starX1(t) + 4.0; y=starX2(t) - 12.0; z=0;}
+//border star13(t=0, 2*pi){x=starX1(t) + 8.0; y=starX2(t) - 8.0; z=0;}
+//border star14(t=0, 2*pi){x=starX1(t) + 12.0; y=starX2(t) - 8.0; z=0;}
+//border star15(t=0, 2*pi){x=starX1(t) + 8.0; y=starX2(t) - 12.0; z=0;}
+//border star16(t=0, 2*pi){x=starX1(t) + 12.0; y=starX2(t) - 12.0; z=0;}
+border  star1(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  0.0)       ; y=rotThX2(starX1(t), starX2(t),  0.0)       ; z=0;}
+border  star2(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  1.0) + 4.0 ; y=rotThX2(starX1(t), starX2(t),  1.0)       ; z=0;}
+border  star3(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  2.0)       ; y=rotThX2(starX1(t), starX2(t),  2.0) - 4.0 ; z=0;}
+border  star4(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  3.0) + 4.0 ; y=rotThX2(starX1(t), starX2(t),  3.0) - 4.0 ; z=0;}
+border  star5(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  4.0) + 8.0 ; y=rotThX2(starX1(t), starX2(t),  4.0)       ; z=0;}
+border  star6(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  5.0) + 12.0; y=rotThX2(starX1(t), starX2(t),  5.0)       ; z=0;}
+border  star7(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  6.0) + 8.0 ; y=rotThX2(starX1(t), starX2(t),  6.0) - 4.0 ; z=0;}
+border  star8(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  7.0) + 12.0; y=rotThX2(starX1(t), starX2(t),  7.0) - 4.0 ; z=0;}
+border  star9(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  8.0)       ; y=rotThX2(starX1(t), starX2(t),  8.0) - 8.0 ; z=0;}
+border star10(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  9.0) + 4.0 ; y=rotThX2(starX1(t), starX2(t),  9.0) - 8.0 ; z=0;}
+border star11(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 10.0)       ; y=rotThX2(starX1(t), starX2(t), 10.0) - 12.0; z=0;}
+border star12(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 11.0) + 4.0 ; y=rotThX2(starX1(t), starX2(t), 11.0) - 12.0; z=0;}
+border star13(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 12.0) + 8.0 ; y=rotThX2(starX1(t), starX2(t), 12.0) - 8.0 ; z=0;}
+border star14(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 13.0) + 12.0; y=rotThX2(starX1(t), starX2(t), 13.0) - 8.0 ; z=0;}
+border star15(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 14.0) + 8.0 ; y=rotThX2(starX1(t), starX2(t), 14.0) - 12.0; z=0;}
+border star16(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 15.0) + 12.0; y=rotThX2(starX1(t), starX2(t), 15.0) - 12.0; z=0;}
+//meshL Th = buildmeshL(star1(no));
+//meshL Th = buildmeshL(star1(no) + star2(no) + star3(no) + star4(no));
+meshL Th = buildmeshL(star1(no) + star2(no) + star3(no) + star4(no)
+                      + star5(no) + star6(no) + star7(no) + star8(no)
+                      + star9(no) + star10(no) + star11(no) + star12(no)
+                      + star13(no) + star14(no) + star15(no) + star16(no)
+                      );
 Th = OrientNormal(Th, unbounded=1); // inward normal
 
 plot(Th, wait=true);
