@@ -1,0 +1,180 @@
+//ff-mpirun -np 4 5_Hel2D_multiple_transmission.edp -wg
+
+load "bem"
+load "plotPDF"
+
+complex omega = 3.0; // frequency
+complex dielec0 = 1.0; // dielectric constant of exterior domain
+complex dielec1 = 4.0; // dielectric constant of interior domain
+
+complex k0 = omega*sqrt(dielec0); // wavenumber of exterior domain
+complex k1 = omega*sqrt(dielec1); // wavenumber of interior domain
+complex alpha = 1i/k0;
+
+cout << "omega" << omega << endl;
+cout << "dielec0" << dielec0 << endl;
+cout << "dielec1" << dielec1 << endl;
+cout << "k0" << k0 << endl;
+cout << "k1" << k1 << endl;
+cout << "alpha" << alpha << endl;
+
+// incident wave
+real angle = 0;
+func finc = exp(1i*k0*(x*cos(angle)+y*sin(angle)));
+func dxfinc = 1i*k0*cos(angle)*finc;
+func dyfinc = 1i*k0*sin(angle)*finc;
+
+// Mesh four circle
+int numCells = 16;
+int no = 200;
+int n = no*numCells;
+
+// Mesh four star
+func real starX1(real t){
+  real a = 0.15; // a < 1.0, near a is sharp
+  real b = 8.0; // number of hands
+  return (1.0 + a*cos(b*t))*cos(t)/(1.0 + a);
+}
+func real starX2(real t){
+  real a = 0.15; // a < 1.0, near a is sharp
+  real b = 8.0; // number of hands
+  return (1.0 + a*cos(b*t))*sin(t)/(1.0 + a);
+}
+func real rotThX1(real x1, real x2, real th){
+  return cos(th)*x1 - sin(th)*x2;
+}
+func real rotThX2(real x1, real x2, real th){
+  return sin(th)*x1 + cos(th)*x2;
+}
+int bemboundary = 1;
+border  star1(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  0.0)       ; y=rotThX2(starX1(t), starX2(t),  0.0)       ; z=0; label=bemboundary;}
+border  star2(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  1.0) + 4.0 ; y=rotThX2(starX1(t), starX2(t),  1.0)       ; z=0; label=bemboundary;}
+border  star3(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  2.0)       ; y=rotThX2(starX1(t), starX2(t),  2.0) - 4.0 ; z=0; label=bemboundary;}
+border  star4(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  3.0) + 4.0 ; y=rotThX2(starX1(t), starX2(t),  3.0) - 4.0 ; z=0; label=bemboundary;}
+border  star5(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  4.0) + 8.0 ; y=rotThX2(starX1(t), starX2(t),  4.0)       ; z=0; label=bemboundary;}
+border  star6(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  5.0) + 12.0; y=rotThX2(starX1(t), starX2(t),  5.0)       ; z=0; label=bemboundary;}
+border  star7(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  6.0) + 8.0 ; y=rotThX2(starX1(t), starX2(t),  6.0) - 4.0 ; z=0; label=bemboundary;}
+border  star8(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  7.0) + 12.0; y=rotThX2(starX1(t), starX2(t),  7.0) - 4.0 ; z=0; label=bemboundary;}
+border  star9(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  8.0)       ; y=rotThX2(starX1(t), starX2(t),  8.0) - 8.0 ; z=0; label=bemboundary;}
+border star10(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t),  9.0) + 4.0 ; y=rotThX2(starX1(t), starX2(t),  9.0) - 8.0 ; z=0; label=bemboundary;}
+border star11(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 10.0)       ; y=rotThX2(starX1(t), starX2(t), 10.0) - 12.0; z=0; label=bemboundary;}
+border star12(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 11.0) + 4.0 ; y=rotThX2(starX1(t), starX2(t), 11.0) - 12.0; z=0; label=bemboundary;}
+border star13(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 12.0) + 8.0 ; y=rotThX2(starX1(t), starX2(t), 12.0) - 8.0 ; z=0; label=bemboundary;}
+border star14(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 13.0) + 12.0; y=rotThX2(starX1(t), starX2(t), 13.0) - 8.0 ; z=0; label=bemboundary;}
+border star15(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 14.0) + 8.0 ; y=rotThX2(starX1(t), starX2(t), 14.0) - 12.0; z=0; label=bemboundary;}
+border star16(t=0, 2*pi){x=rotThX1(starX1(t), starX2(t), 15.0) + 12.0; y=rotThX2(starX1(t), starX2(t), 15.0) - 12.0; z=0; label=bemboundary;}
+meshL Th = buildmeshL(star1(no) + star2(no) + star3(no) + star4(no)
+                      + star5(no) + star6(no) + star7(no) + star8(no)
+                      + star9(no) + star10(no) + star11(no) + star12(no)
+                      + star13(no) + star14(no) + star15(no) + star16(no)
+                      );
+Th = OrientNormal(Th, unbounded=1); // inward normal
+
+plot(Th, wait=true);
+
+// Dof
+fespace Uh(Th,P1);
+
+// Hmatrix for formulation of first kind
+BemKernel DL0("DL",k=k0);
+BemKernel HS0("HS",k=k0);
+BemKernel ExLeft = DL0 + (alpha)*HS0;
+BemKernel SL0("SL",k=k0);
+BemKernel TDL0("TDL",k=k0);
+BemKernel ExRight = SL0 + (alpha)*TDL0;
+
+BemKernel InLeft("DL",k=k1);
+BemKernel InRight("SL",k=k1);
+
+//Uh<complex> ubem, qbem, v0, v1;
+
+//varf vk1(u,v) = int1dx1d(Th)(Th)(BEM(BM,u,v)) - int1d(Th)(alpha*0.5*u*v);
+//varf vk1(u,v) = int1dx1d(Th)(Th)(BEM(BM,u,v)) - int1d(Th)(0.5*u*v); // BM
+//HMatrix<complex> HFirstKind = vk1(Uh,Uh,eta=10,eps=1e-8,minclustersize=10);
+//if (mpirank == 0) cout << HFirstKind.infos << endl;
+
+/* the coupled problem we want to solve is :
+(  F     TDL ) (ufem) = (Frhs)
+(  mass  -SL ) (ubem)   ( 0  ) */
+
+/* the coupled problem we want to solve is :
+( ExLeft -ExRight ) (ubem) = (finc + alpha*dfinc)
+( InLeft -InRight ) (qbem) = ( 0 ) */
+
+//problem pbLenses(<[ufem],[ubem]>,<[v1],[v2]>,solver=sparsesolver,master=-1) =
+//  int2d(Th)(-ind*k^2*ufem*v1 + Grad(ufem)'*Grad(v1)) // F
+//  + int1dx1d(ThL)(ThL)(BEM(BemKernel("TDL",k=k),ubem,v1)) + int1d(ThL)(0.5*ubem*v1) // TDL
+//  + int1d(ThL)(ufem*v2)                        // mass
+//  + int1dx1d(ThL)(ThL)(BEM(-1*BemKernel("SL",k=k),ubem,v2))  // -SL
+//  - int2d(Th)(finc*v1) + on(waveguide,ufem=0); // RHS
+
+/*
+problem pbBMtransmission(<[ubem],[qbem]>,<[v0],[v1]>,solver=sparsesolver,master=-1) =
+  int1dx1d(Th)(Th)(BEM(ExLeft,ubem,v0))         - int1d(Th)(0.5*ubem*v0)         // ExLeft
+  + int1dx1d(Th)(Th)(BEM(-1.0*ExRight,qbem,v0)) - int1d(Th)(alpha*0.5*qbem*v0)   // ExRight
+  + int1dx1d(Th)(Th)(BEM(InLeft,ubem,v1))       + int1d(Th)(0.5*ubem*v1)         // InLeft
+  + int1dx1d(Th)(Th)(BEM(-1.0*InRight,qbem,v1))                                  // InRight
+  + int1d(Th)(-(finc + alpha*(dxfinc*Tl.y - dyfinc*Tl.x))*v0) + int1d(Th)(0*v1); // RHS
+
+pbBMtransmission;
+*/
+
+// assemble BEM block upper left:
+varf EL(u,v) = int1dx1d(Th)(Th)(BEM(ExLeft,u,v)) - int1d(Th)(0.5*u*v);
+HMatrix<complex> HEL = EL(Uh,Uh);
+
+// assemble TDL BEM upper right:
+varf ER(u,v) = int1dx1d(Th)(Th)(BEM(ExRight,u,v)) - int1d(Th)(alpha*0.5*u*v);
+HMatrix<complex> HER = ER(Uh,Uh);
+
+// assemble BEM block lower left:
+varf IL(u,v) = int1dx1d(Th)(Th)(BEM(InLeft,u,v)) + int1d(Th)(0.5*u*v);
+HMatrix<complex> HIL = IL(Uh,Uh);
+
+// assemble TDL BEM block lower rihght:
+varf IR(u,v) = int1dx1d(Th)(Th)(BEM(InRight,u,v));
+HMatrix<complex> HIR = IR(Uh,Uh);
+
+complex[int,int] MEL(Uh.ndof,Uh.ndof);
+complex[int,int] MER(Uh.ndof,Uh.ndof);
+complex[int,int] MIL(Uh.ndof,Uh.ndof);
+complex[int,int] MIR(Uh.ndof,Uh.ndof);
+MEL = HEL; // each MPI process densifies its part of HMatrix HSL
+MER = HER; // each MPI process densifies its part of HMatrix HSL
+MIL = HIL; // each MPI process densifies its part of HMatrix HSL
+MIR = HIR; // each MPI process densifies its part of HMatrix HSL
+//MSL *= -1;
+
+matrix<complex> A = [[MEL, MER],
+                     [MIL, MIR]];
+
+// compute factorization of distributed matrix A in parallel with MUMPS
+set(A,solver=sparsesolver,master=-1);
+
+// assemble rhs
+varf fincRhs(u,v) = int1d(Th)(-(finc + alpha*(dxfinc*Tl.y - dyfinc*Tl.x))*v); // BM
+complex[int] rhs(Uh.ndof + Uh.ndof);
+rhs(0:Uh.ndof - 1) = fincRhs(0, Uh);
+//rhs(Uh.ndof:2*Uh.ndof - 1) = 0.0;
+
+complex[int] sol(Uh.ndof + Uh.ndof);
+
+sol = A^-1*rhs;
+
+Uh<complex> ubem;
+ubem[] = sol(0:Uh.ndof - 1);
+
+Uh<complex> qbem;
+qbem[] = sol(Uh.ndof:2*Uh.ndof - 1);
+
+// Output solution
+if(mpirank == 0){
+  ofstream ofs("u_boundary_5_Hel2D_multiple_transmission.txt");
+  ofstream ofs2("q_boundary_5_Hel2D_multiple_transmission.txt");
+  ofs << "# i, x, y, real(u), imag(u)" << endl;
+  ofs2 << "# i, x, y, real(q), imag(q)" << endl;
+  for(int i = 0; i < n; i++){
+    ofs  << i << " " << Th(i).x << " " << Th(i).y << " " << real(ubem[][i]) << " " << imag(ubem[][i]) << endl;
+    ofs2 << i << " " << Th(i).x << " " << Th(i).y << " " << real(qbem[][i]) << " " << imag(qbem[][i]) << endl;
+  }
+ }
