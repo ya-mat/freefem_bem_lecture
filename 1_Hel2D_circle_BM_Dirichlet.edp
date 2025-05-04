@@ -1,4 +1,4 @@
-//ff-mpirun -np 4 1_Hel2D_circle_BM_Dirichlet.edp
+//ff-mpirun -np 1 1_Hel2D_circle_BM_Dirichlet.edp
 
 load "bem"
 load "gsl"

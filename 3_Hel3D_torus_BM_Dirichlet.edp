@@ -1,4 +1,4 @@
-//ff-mpirun -np 4 3_Hel3D_torus_BM_Dirichlet.edp -wg
+//ff-mpirun -np 1 3_Hel3D_torus_BM_Dirichlet.edp -wg
 
 load "bem"
 load "gsl"
@@ -23,22 +23,21 @@ func dyfinc = 1i*k*dir[1]*finc;
 func dzfinc = 1i*k*dir[2]*finc;
 
 // torus
-//real R = 3, r=1, h=0.2;
-//int nx = R*2*pi/h, ny = r*2*pi/h;
-//func torex = (R+r*cos(y*pi*2))*cos(x*pi*2);
-//func torey = (R+r*cos(y*pi*2))*sin(x*pi*2);
-//func torez = r*sin(y*pi*2);
-//meshS Th = square3(nx,ny,[torex,torey,torez],removeduplicate=true);
+real R = 3, r=1, h=0.2;
+int nx = R*2*pi/h, ny = r*2*pi/h;
+func torex = (R+r*cos(y*pi*2))*cos(x*pi*2);
+func torey = (R+r*cos(y*pi*2))*sin(x*pi*2);
+func torez = r*sin(y*pi*2);
+meshS Th = square3(nx,ny,[torex,torey,torez],removeduplicate=true);
+Th = OrientNormal(Th, unbounded=1); // inward normal
 
 // sphere
-real R = 0.1;
-real h = 0.02;
-real L = 0;
-real[int] center = [0.0, 0.0, 0.0];
-int orient = -1;
-meshS Th = Sphere(R, h, L, center[0], center[1], center[2], orient); // inward normal
-
-//Th = OrientNormal(Th, unbounded=1); 
+//real R = 0.1;
+//real h = 0.02;
+//real L = 0;
+//real[int] center = [0.0, 0.0, 0.0];
+//int orient = -1;
+//meshS Th = Sphere(R, h, L, center[0], center[1], center[2], orient); // inward normal
 
 // view of mesh, shift+t shows the normal vector
 plot(Th, wait=true);
@@ -46,90 +45,28 @@ plot(Th, wait=true);
 // Dof
 fespace Uh(Th,P1);
 
-//// exact solution function on domain
-//real Robj = 1;
-//func complex exactsol(real xi, real yi){
-//    real r = sqrt(xi^2 + yi^2);
-//    real theta = atan2(yi,xi);
-//    complex value = 0;
-//    for (int n=0;n<100;n++){
-//        real JnAtr    = gslsfbesselJn(n,real(k)*r);
-//        real YnAtr    = gslsfbesselYn(n,real(k)*r);
-//        real JnAtRobj = gslsfbesselJn(n,real(k)*Robj);
-//        real YnAtRobj = gslsfbesselYn(n,real(k)*Robj);
-// 	value+=2*(-1*JnAtRobj*(JnAtr+1i*YnAtr)/(JnAtRobj+1i*YnAtRobj))*exp(1i*n*pi/2.)*cos(n*(theta-angle));
-//        if (n==0){
-//            value*=0.5;
-//        }
-//    }
-//    return value;
-//}
-
 // Hmatrix for formulation of first kind
 BemKernel ker1("SL",k=k);
 BemKernel SL("SL",k=k);
 BemKernel TDL("TDL",k=k);
 BemKernel BM = SL + (alpha)*TDL;
-varf vk1(u,v)=int2dx2d(Th)(Th)(BEM(ker1,u,v)); // Not BM
-//varf vk1(u,v) = int2dx2d(Th)(Th)(BEM(BM,u,v)) - int2d(Th)(alpha*0.5*u*v);
+//varf vk1(u,v)=int2dx2d(Th)(Th)(BEM(ker1,u,v)); // Not BM
+varf vk1(u,v) = int2dx2d(Th)(Th)(BEM(BM,u,v)) - int2d(Th)(alpha*0.5*u*v);
 HMatrix<complex> HFirstKind = vk1(Uh,Uh,eta=10,eps=1e-8,minclustersize=10);
 if (mpirank == 0) cout << HFirstKind.infos << endl;
 display(HFirstKind);
 
 // Solve formulation of first kind
 Uh<complex> uFirstKind, bFirstKind;
-varf vmassFirstKind(u,v) = int2d(Th)(-(finc)*v); // Not BM
-//varf vmassFirstKind(u,v) = int2d(Th)(-(finc + alpha*(dxfinc*Tl.y - dyfinc*Tl.x))*v);
+//varf vmassFirstKind(u,v) = int2d(Th)(-(finc)*v); // Not BM
+varf vmassFirstKind(u,v) = int2d(Th)(-(finc + alpha*(dxfinc*Tl.y - dyfinc*Tl.x))*v);
 bFirstKind[] = vmassFirstKind(0,Uh);
 uFirstKind[] = HFirstKind^-1*bFirstKind[];
-//if(mpirank == 0){
-//  ofstream ofs("q_boundary_1_Hel2D_circle_BM_Dirichlet.txt");
-//  ofs << "# i, x, y, real(u), imag(u)" << endl;
-//  for(int i = 0; i < n; i++){
-//    ofs << i << " " << Th(i).x << " " << Th(i).y << " " << real(uFirstKind[][i]) << " " << imag(uFirstKind[][i]) << endl;
-//  }
-// }
+if(mpirank == 0){
+  ofstream ofs("q_boundary_3_Hel3D_torus_BM_Dirichlet.txt");
+  ofs << "# i, x, y, real(u), imag(u)" << endl;
+  for(int i = 0; i < Uh.ndof; i++){
+    ofs << i << " " << Th(i).x << " " << Th(i).y << " " << Th(i).z << " " << real(uFirstKind[][i]) << " " << imag(uFirstKind[][i]) << endl;
+  }
+ }
 
-// Mesh output
-mesh3 ThOut = buildmesh(SurfaceHex([24, 24, 24], [[-1, 1], [-1, 1], [-1, 1]], [[1, 2], [3, 4], [5, 6]], 1)
-			- Sphere(R*1.1, h, L, center[0], center[1], center[2], orient));
-
-// Incident wave in volume
-fespace UhOut(ThOut,P1);
-UhOut<complex> vinc;
-vinc = finc;
-
-// HMatrix for potential
-BemPotential Pot("SL",k=k);
-varf vp(u,v)=int1d(Th)(POT(Pot,u,v));
-HMatrix<complex> HPot = vp(Uh,UhOut,eta=10,eps=1e-6,minclustersize=10);
-
-if (mpirank == 0) cout << HPot.infos << endl;
-display(HPot);
-
-// Solution for formulation of first kind
-UhOut<complex> vFirstKind, exacti = 0, exact;
-
-// Compare to the exact solution:
-for [i, bi : exacti[]]
-if (i >= mpirank*ceil(1.*UhOut.ndof/mpisize) && i < (mpirank+1)*ceil(1.*UhOut.ndof/mpisize))
-    bi = exactsol(ThOut(i).x,ThOut(i).y);
-mpiReduce(exacti[],exact[],processor(0,mpiCommWorld),mpiSUM);
-
-exact = exact + finc;
-
-vFirstKind[] = HPot*uFirstKind[];
-vFirstKind[] += vinc[];
-
-UhOut<complex> diff = exact-vFirstKind;
-//if (mpirank == 0){
-//  cout << "###############################################" << endl;
-//  cout << "relative L2 error = " << diff[].l2/exact[].l2 << endl;
-//  cout << "###############################################" << endl;
-// }
- 
-if (mpirank == 0){
-  plotPDF("solution_1_Hel2D_circle_BM_Dirichlet.pdf", ThOut, vFirstKind, meshpage=0,zreal=1,zimag=1,isoline=0,zabs=1);
-  plotPDF("exact_1_Hel2D_circle_BM_Dirichlet.pdf", ThOut, exact, meshpage=0,zreal=1,zimag=1,isoline=0,zabs=1);
-  plotPDF("diff_1_Hel2D_circle_BM_Dirichlet.pdf", ThOut, diff, meshpage=0,zreal=1,zimag=1,isoline=0,zabs=1);
-}

@@ -1,4 +1,5 @@
-//ff-mpirun -np 4 5_Hel2D_multiple_transmission.edp -wg
+// execute with no mpi
+//ff-mpirun -np 1 5_Hel2D_multiple_transmission.edp -wg
 
 load "bem"
 load "plotPDF"
@@ -86,73 +87,36 @@ BemKernel ExRight = SL0 + (alpha)*TDL0;
 BemKernel InLeft("DL",k=k1);
 BemKernel InRight("SL",k=k1);
 
-//Uh<complex> ubem, qbem, v0, v1;
-
-//varf vk1(u,v) = int1dx1d(Th)(Th)(BEM(BM,u,v)) - int1d(Th)(alpha*0.5*u*v);
-//varf vk1(u,v) = int1dx1d(Th)(Th)(BEM(BM,u,v)) - int1d(Th)(0.5*u*v); // BM
-//HMatrix<complex> HFirstKind = vk1(Uh,Uh,eta=10,eps=1e-8,minclustersize=10);
-//if (mpirank == 0) cout << HFirstKind.infos << endl;
-
-/* the coupled problem we want to solve is :
-(  F     TDL ) (ufem) = (Frhs)
-(  mass  -SL ) (ubem)   ( 0  ) */
-
-/* the coupled problem we want to solve is :
-( ExLeft -ExRight ) (ubem) = (finc + alpha*dfinc)
-( InLeft -InRight ) (qbem) = ( 0 ) */
-
-//problem pbLenses(<[ufem],[ubem]>,<[v1],[v2]>,solver=sparsesolver,master=-1) =
-//  int2d(Th)(-ind*k^2*ufem*v1 + Grad(ufem)'*Grad(v1)) // F
-//  + int1dx1d(ThL)(ThL)(BEM(BemKernel("TDL",k=k),ubem,v1)) + int1d(ThL)(0.5*ubem*v1) // TDL
-//  + int1d(ThL)(ufem*v2)                        // mass
-//  + int1dx1d(ThL)(ThL)(BEM(-1*BemKernel("SL",k=k),ubem,v2))  // -SL
-//  - int2d(Th)(finc*v1) + on(waveguide,ufem=0); // RHS
-
-/*
-problem pbBMtransmission(<[ubem],[qbem]>,<[v0],[v1]>,solver=sparsesolver,master=-1) =
-  int1dx1d(Th)(Th)(BEM(ExLeft,ubem,v0))         - int1d(Th)(0.5*ubem*v0)         // ExLeft
-  + int1dx1d(Th)(Th)(BEM(-1.0*ExRight,qbem,v0)) - int1d(Th)(alpha*0.5*qbem*v0)   // ExRight
-  + int1dx1d(Th)(Th)(BEM(InLeft,ubem,v1))       + int1d(Th)(0.5*ubem*v1)         // InLeft
-  + int1dx1d(Th)(Th)(BEM(-1.0*InRight,qbem,v1))                                  // InRight
-  + int1d(Th)(-(finc + alpha*(dxfinc*Tl.y - dyfinc*Tl.x))*v0) + int1d(Th)(0*v1); // RHS
-
-pbBMtransmission;
-*/
-
-// assemble BEM block upper left:
-varf EL(u,v) = int1dx1d(Th)(Th)(BEM(ExLeft,u,v)) - int1d(Th)(0.5*u*v);
+// assemble BEM block
+varf EL(u,v) = int1dx1d(Th)(Th)(BEM(ExLeft, u, v))  - int1d(Th)(0.5*u*v); // upper left
+varf ER(u,v) = int1dx1d(Th)(Th)(BEM(ExRight, u, v)) - int1d(Th)(alpha*0.5*u*v); // upper right
+varf IL(u,v) = int1dx1d(Th)(Th)(BEM(InLeft, u, v))  + int1d(Th)(0.5*u*v); // lower left
+varf IR(u,v) = int1dx1d(Th)(Th)(BEM(InRight, u, v)); // lower rihght
 HMatrix<complex> HEL = EL(Uh,Uh);
-
-// assemble TDL BEM upper right:
-varf ER(u,v) = int1dx1d(Th)(Th)(BEM(ExRight,u,v)) - int1d(Th)(alpha*0.5*u*v);
 HMatrix<complex> HER = ER(Uh,Uh);
-
-// assemble BEM block lower left:
-varf IL(u,v) = int1dx1d(Th)(Th)(BEM(InLeft,u,v)) + int1d(Th)(0.5*u*v);
 HMatrix<complex> HIL = IL(Uh,Uh);
-
-// assemble TDL BEM block lower rihght:
-varf IR(u,v) = int1dx1d(Th)(Th)(BEM(InRight,u,v));
 HMatrix<complex> HIR = IR(Uh,Uh);
 
 complex[int,int] MEL(Uh.ndof,Uh.ndof);
 complex[int,int] MER(Uh.ndof,Uh.ndof);
 complex[int,int] MIL(Uh.ndof,Uh.ndof);
 complex[int,int] MIR(Uh.ndof,Uh.ndof);
-MEL = HEL; // each MPI process densifies its part of HMatrix HSL
-MER = HER; // each MPI process densifies its part of HMatrix HSL
-MIL = HIL; // each MPI process densifies its part of HMatrix HSL
-MIR = HIR; // each MPI process densifies its part of HMatrix HSL
-//MSL *= -1;
+MEL = HEL;
+MER = HER;
+MIL = HIL;
+MIR = HIR;
+MER *= dielec0;
+MIR *= dielec1;
 
 matrix<complex> A = [[MEL, MER],
                      [MIL, MIR]];
 
-// compute factorization of distributed matrix A in parallel with MUMPS
-set(A,solver=sparsesolver,master=-1);
+// compute factorization of matrix A
+//set(A,solver=sparsesolver,master=-1);
+set(A, solver=LU, factorize=1);
 
 // assemble rhs
-varf fincRhs(u,v) = int1d(Th)(-(finc + alpha*(dxfinc*Tl.y - dyfinc*Tl.x))*v); // BM
+varf fincRhs(u,v) = int1d(Th)(-(finc + alpha*(dxfinc*Tl.y - dyfinc*Tl.x))*v);
 complex[int] rhs(Uh.ndof + Uh.ndof);
 rhs(0:Uh.ndof - 1) = fincRhs(0, Uh);
 //rhs(Uh.ndof:2*Uh.ndof - 1) = 0.0;
@@ -162,9 +126,8 @@ complex[int] sol(Uh.ndof + Uh.ndof);
 sol = A^-1*rhs;
 
 Uh<complex> ubem;
-ubem[] = sol(0:Uh.ndof - 1);
-
 Uh<complex> qbem;
+ubem[] = sol(0:Uh.ndof - 1);
 qbem[] = sol(Uh.ndof:2*Uh.ndof - 1);
 
 // Output solution
