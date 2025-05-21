@@ -1,0 +1,72 @@
+//ff-mpirun -np 1 3_Hel3D_torus_BM_Dirichlet.edp -wg
+
+load "bem"
+load "gsl"
+load "plotPDF"
+load "msh3"
+
+include "MeshSurface.idp"
+include "getARGV.idp"
+
+complex k = getARGV("-k",10.); // wavenumber
+complex alpha = 1i/k;
+
+cout << "k" << k << endl;
+cout << "alpha" << alpha << endl;
+
+// incident wave
+real angle = 0;
+real[int] dir=[1,0,0];
+func finc = exp(1i*k*(x*dir[0]+y*dir[1]+z*dir[2]));
+func dxfinc = 1i*k*dir[0]*finc;
+func dyfinc = 1i*k*dir[1]*finc;
+func dzfinc = 1i*k*dir[2]*finc;
+
+// torus
+real R = 3, r=1, h=0.2;
+int nx = R*2*pi/h, ny = r*2*pi/h;
+func torex = (R+r*cos(y*pi*2))*cos(x*pi*2);
+func torey = (R+r*cos(y*pi*2))*sin(x*pi*2);
+func torez = r*sin(y*pi*2);
+meshS Th = square3(nx,ny,[torex,torey,torez],removeduplicate=true);
+Th = OrientNormal(Th, unbounded=1); // inward normal
+
+// sphere
+//real R = 0.1;
+//real h = 0.02;
+//real L = 0;
+//real[int] center = [0.0, 0.0, 0.0];
+//int orient = -1;
+//meshS Th = Sphere(R, h, L, center[0], center[1], center[2], orient); // inward normal
+
+// view of mesh, shift+t shows the normal vector
+plot(Th, wait=true);
+
+// Dof
+fespace Uh(Th,P1);
+
+// Hmatrix for formulation of first kind
+BemKernel ker1("SL",k=k);
+BemKernel SL("SL",k=k);
+BemKernel TDL("TDL",k=k);
+BemKernel BM = SL + (alpha)*TDL;
+//varf vk1(u,v)=int2dx2d(Th)(Th)(BEM(ker1,u,v)); // Not BM
+varf vk1(u,v) = int2dx2d(Th)(Th)(BEM(BM,u,v)) - int2d(Th)(alpha*0.5*u*v);
+HMatrix<complex> HFirstKind = vk1(Uh,Uh,eta=10,eps=1e-8,minclustersize=10);
+if (mpirank == 0) cout << HFirstKind.infos << endl;
+display(HFirstKind);
+
+// Solve formulation of first kind
+Uh<complex> uFirstKind, bFirstKind;
+//varf vmassFirstKind(u,v) = int2d(Th)(-(finc)*v); // Not BM
+varf vmassFirstKind(u,v) = int2d(Th)(-(finc + alpha*(dxfinc*Tl.y - dyfinc*Tl.x))*v);
+bFirstKind[] = vmassFirstKind(0,Uh);
+uFirstKind[] = HFirstKind^-1*bFirstKind[];
+if(mpirank == 0){
+  ofstream ofs("q_boundary_3_Hel3D_torus_BM_Dirichlet.txt");
+  ofs << "# i, x, y, real(u), imag(u)" << endl;
+  for(int i = 0; i < Uh.ndof; i++){
+    ofs << i << " " << Th(i).x << " " << Th(i).y << " " << Th(i).z << " " << real(uFirstKind[][i]) << " " << imag(uFirstKind[][i]) << endl;
+  }
+ }
+
