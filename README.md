@@ -20,7 +20,7 @@ ff-mpirun -np 4 1_Hel2D_circle_BM_Dirichlet.edp -wg
 ff-mpirun -np 4 2_Hel2D_circle_BM_Neumann.edp -wg
 ff-mpirun -np 4 3_Hel3D_BM_Dirichlet.edp -wg
 ff-mpirun -np 4 4_Hel2D_multiple_BM_Neumann.edp -wg
-ff-mpirun -np 4 5_Hel2D_multiple_transmission.edp -wg
+ff-mpirun -np 1 5_Hel2D_multiple_transmission.edp -wg
 ```
 Except for `5_Hel2D_multiple_transmission.edp`, MPI is available.
 
