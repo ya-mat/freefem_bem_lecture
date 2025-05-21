@@ -10,6 +10,6 @@ cd freefem_bem_lecture
 ```
 or
 ```
-git clone git@github.com:ya-mat/freefem_bem_lecture.git
+git clone https://github.com/ya-mat/freefem_bem_lecture.git
 cd freefem_bem_lecture
 ```
